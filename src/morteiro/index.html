@@ -24,10 +24,19 @@
     .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 28px; }
     button { border: 0; border-radius: 10px; padding: 13px 18px; font: inherit; font-weight: 650; cursor: pointer; background: #7de0b2; color: #102219; }
     button.secondary { background: #2c394a; color: #edf2f8; }
-    #result { margin-top: 22px; line-height: 1.8; white-space: pre-line; }
+    #result { margin-top: 24px; line-height: 1.6; }
+    #result:empty { margin-top: 0; }
+    #result.metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .metric { min-width: 0; padding: 22px; border: 1px solid #426558; border-radius: 14px; background: #142c25; }
+    .metric + .metric { background: #172a40; border-color: #405f83; }
+    .metric-label { display: block; color: #c0cddd; font-size: 13px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+    .metric-value { display: block; margin-top: 10px; color: #91f0c2; font-size: clamp(30px, 5vw, 44px); font-weight: 750; line-height: 1.2; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+    .metric + .metric .metric-value { color: #9dcaff; }
+    .metric-unit { font-size: 16px; font-weight: 500; color: #c0cddd; }
+    .metric-value.undefined { font-size: 23px; }
     #result.error { color: #ffaaa5; }
     footer { color: #8393a7; font-size: 12px; margin-top: 20px; }
-    @media (max-width: 480px) { form { padding: 20px; } }
+    @media (max-width: 480px) { form { padding: 20px; } #result.metrics { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -102,7 +111,26 @@
         : `${(Math.round(azimuth * 100) / 100 % 360).toLocaleString('pt-BR', {
             minimumFractionDigits: 2, maximumFractionDigits: 2
           })}°`;
-      result.textContent = `Distância em linha reta: ${formattedDistance} metros\nAzimute: ${formattedAzimuth}\nOrigem: X ${a.x} · Y ${a.y}\nDestino: X ${b.x} · Y ${b.y}\nReferência: X para leste, Y para norte; azimute no sentido horário a partir do norte.`;
+      result.className = 'metrics';
+      function addMetric(label, value, unit, undefinedValue = false) {
+        const card = document.createElement('div');
+        card.className = 'metric';
+        const heading = document.createElement('span');
+        heading.className = 'metric-label';
+        heading.textContent = label;
+        const number = document.createElement('strong');
+        number.className = undefinedValue ? 'metric-value undefined' : 'metric-value';
+        number.textContent = value;
+        const suffix = document.createElement('span');
+        suffix.className = 'metric-unit';
+        suffix.textContent = unit;
+        number.append(suffix);
+        card.append(heading, number);
+        result.append(card);
+      }
+      addMetric('Distância', formattedDistance, ' metros');
+      const samePoint = dx === 0 && dy === 0;
+      addMetric('Azimute', samePoint ? 'Indefinido' : formattedAzimuth.slice(0, -1), samePoint ? '' : '°', samePoint);
     });
     form.addEventListener('reset', event => {
       if (lockOrigin.checked) {
