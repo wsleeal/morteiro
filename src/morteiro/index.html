@@ -8,14 +8,14 @@
   <style>
     :root { color-scheme: dark; font-family: system-ui, sans-serif; background: #10151d; color: #edf2f8; }
     * { box-sizing: border-box; }
-    body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px; }
+    body { margin: 0; min-height: 100vh; display: grid; justify-items: center; align-content: start; padding: 48px 24px; }
     main { width: 960px; max-width: 100%; min-width: 0; }
     .tag { color: #7de0b2; letter-spacing: .16em; font-size: 12px; font-weight: 700; }
     h1 { font-size: clamp(30px, 6vw, 44px); letter-spacing: -.04em; margin: 12px 0; }
-    p { color: #aab7c8; line-height: 1.6; }
+    p { color: #aab7c8; line-height: 1.6; margin: 0; }
     form { width: 100%; max-width: 960px; background: #19222e; border: 1px solid #303d4e; border-radius: 20px; padding: 28px; margin-top: 30px; }
-    label { display: block; font-weight: 650; margin-bottom: 10px; }
-    input { width: 100%; background: #101720; border: 1px solid #48576b; border-radius: 10px; padding: 16px; font: inherit; color: #edf2f8; }
+    label { display: block; font-size: 13px; line-height: 20px; font-weight: 650; margin-bottom: 8px; }
+    input { width: 100%; height: 48px; background: #101720; border: 1px solid #48576b; border-radius: 10px; padding: 12px 14px; font: inherit; color: #edf2f8; }
     #origin { display: block; width: 280px; max-width: 100%; padding: 12px 14px; }
     input:focus-visible, button:focus-visible { outline: 3px solid #7de0b2; outline-offset: 3px; }
     input[readonly] { border-color: #7de0b2; background: #1c302c; }
@@ -23,26 +23,31 @@
     .lock input { width: 18px; height: 18px; padding: 0; accent-color: #7de0b2; }
     .field + .field { margin-top: 24px; }
     .hint { font-size: 13px; margin: 8px 0 0; }
-    .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 28px; }
+    #destination-hint { margin-top: 24px; padding-top: 24px; border-top: 1px solid #303d4e; }
+    .actions { display: flex; align-items: center; justify-content: flex-end; gap: 12px; flex-wrap: wrap; margin-top: 24px; padding-top: 20px; border-top: 1px solid #303d4e; }
     button { border: 0; border-radius: 10px; padding: 13px 18px; font: inherit; font-weight: 650; cursor: pointer; background: #7de0b2; color: #102219; }
     button.secondary { background: #2c394a; color: #edf2f8; }
     .result { margin-top: 24px; line-height: 1.6; }
     .result:empty { margin-top: 0; }
     .result.metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
-    .destination { margin-top: 24px; padding-top: 24px; border-top: 1px solid #303d4e; }
+    .destination { margin-top: 16px; padding: 16px; border: 1px solid #303d4e; border-radius: 12px; background: #151e29; }
     .destination-name { flex: 1; min-width: 0; }
-    .destination-name label { margin-bottom: 10px; }
-    .destination-title { margin: 0; font-size: 20px; overflow-wrap: anywhere; }
-    .destination-coordinates-text { margin: 0; padding: 16px 0; color: #edf2f8; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
-    .destination-line { display: grid; grid-template-columns: minmax(140px, .8fr) minmax(200px, 1fr) minmax(0, 1.4fr) 44px; gap: 16px; align-items: end; }
+    .destination-name label { margin-bottom: 8px; }
+    .destination-title { margin: 0; min-height: 48px; display: flex; align-items: center; font-size: 16px; line-height: 24px; overflow-wrap: anywhere; }
+    .destination-coordinates-text { margin: 0; min-height: 48px; display: flex; align-items: center; color: #edf2f8; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+    .destination-line { display: grid; grid-template-columns: minmax(130px, .8fr) minmax(190px, 1.1fr) minmax(0, 1.4fr) 44px; gap: 12px; align-items: center; }
+    .destination-caption { display: block; color: #c0cddd; font-size: 13px; font-weight: 650; line-height: 20px; margin-bottom: 8px; }
     .icon-button { display: inline-grid; place-items: center; width: 44px; height: 44px; padding: 10px; flex-shrink: 0; }
     .icon-button svg { width: 24px; height: 24px; }
-    .remove-destination { background: #3b232a; color: #ff7777; margin-bottom: 6px; }
+    .remove-destination { background: #3b232a; color: #ff7777; align-self: end; margin-bottom: 2px; }
     .remove-destination:hover { background: #562b34; }
     .destination-line > div { min-width: 0; }
     .destination-line .result { margin-top: 0; }
-    .destination-line .metric { padding: 12px; }
-    .destination-line .metric-value { font-size: 26px; margin-top: 6px; }
+    .destination-line .result.metrics { gap: 8px; }
+    .destination-line .metric { padding: 10px; border-radius: 10px; }
+    .destination-line .metric-label { font-size: 11px; letter-spacing: .04em; }
+    .destination-line .metric-value { font-size: 22px; margin-top: 6px; }
+    .destination-line .metric-unit { font-size: 13px; }
     .destination-line .metric-value.undefined { font-size: 20px; }
     @media (max-width: 900px) {
       .destination-line { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 44px; }
@@ -63,7 +68,7 @@
     .metric-value.undefined { font-size: 23px; }
     .result.error { color: #ffaaa5; }
     footer { color: #8393a7; font-size: 12px; margin-top: 20px; }
-    @media (max-width: 480px) { form { padding: 20px; } .result.metrics { grid-template-columns: 1fr; } }
+    @media (max-width: 480px) { body { padding: 24px 12px; } form { padding: 16px; margin-top: 24px; } .destination { padding: 12px; } .destination-line { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .remove-destination { grid-column: 2; grid-row: 3; justify-self: end; } }
   </style>
 </head>
 <body>
@@ -136,7 +141,10 @@
         const heading = document.createElement('h2');
         heading.className = 'destination-title';
         heading.textContent = name;
-        row.querySelector('.destination-name').replaceChildren(heading);
+        const caption = document.createElement('span');
+        caption.className = 'destination-caption';
+        caption.textContent = 'Nome do destino';
+        row.querySelector('.destination-name').replaceChildren(caption, heading);
         row.querySelector('button').setAttribute('aria-label', `Remover destino ${name}`);
       }
       nameInput.addEventListener('blur', confirmName);
@@ -163,7 +171,7 @@
         text.tabIndex = -1;
         const label = coordinatesInput.previousElementSibling;
         const caption = document.createElement('span');
-        caption.className = 'metric-label';
+        caption.className = 'destination-caption';
         caption.textContent = label.textContent;
         label.replaceWith(caption);
         coordinatesInput.replaceWith(text);
