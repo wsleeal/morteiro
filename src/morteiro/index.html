@@ -3,19 +3,20 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Calculadora de Balística de Morteiro</title>
+  <title>Calculadora de Balística</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <style>
     :root { color-scheme: dark; font-family: system-ui, sans-serif; background: #10151d; color: #edf2f8; }
     * { box-sizing: border-box; }
     body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px; }
-    main { width: 100%; max-width: 720px; }
+    main { width: 960px; max-width: 100%; min-width: 0; }
     .tag { color: #7de0b2; letter-spacing: .16em; font-size: 12px; font-weight: 700; }
     h1 { font-size: clamp(30px, 6vw, 44px); letter-spacing: -.04em; margin: 12px 0; }
     p { color: #aab7c8; line-height: 1.6; }
-    form { background: #19222e; border: 1px solid #303d4e; border-radius: 20px; padding: 28px; margin-top: 30px; }
+    form { width: 100%; max-width: 960px; background: #19222e; border: 1px solid #303d4e; border-radius: 20px; padding: 28px; margin-top: 30px; }
     label { display: block; font-weight: 650; margin-bottom: 10px; }
     input { width: 100%; background: #101720; border: 1px solid #48576b; border-radius: 10px; padding: 16px; font: inherit; color: #edf2f8; }
+    #origin { display: block; width: 280px; max-width: 100%; padding: 12px 14px; }
     input:focus-visible, button:focus-visible { outline: 3px solid #7de0b2; outline-offset: 3px; }
     input[readonly] { border-color: #7de0b2; background: #1c302c; }
     .lock { display: flex; align-items: center; gap: 10px; margin: 14px 0 0; font-size: 14px; cursor: pointer; }
@@ -25,9 +26,34 @@
     .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 28px; }
     button { border: 0; border-radius: 10px; padding: 13px 18px; font: inherit; font-weight: 650; cursor: pointer; background: #7de0b2; color: #102219; }
     button.secondary { background: #2c394a; color: #edf2f8; }
-    #result { margin-top: 24px; line-height: 1.6; }
-    #result:empty { margin-top: 0; }
-    #result.metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .result { margin-top: 24px; line-height: 1.6; }
+    .result:empty { margin-top: 0; }
+    .result.metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .destination { margin-top: 24px; padding-top: 24px; border-top: 1px solid #303d4e; }
+    .destination-name { flex: 1; min-width: 0; }
+    .destination-name label { margin-bottom: 10px; }
+    .destination-title { margin: 0; font-size: 20px; overflow-wrap: anywhere; }
+    .destination-coordinates-text { margin: 0; padding: 16px 0; color: #edf2f8; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+    .destination-line { display: grid; grid-template-columns: minmax(140px, .8fr) minmax(200px, 1fr) minmax(0, 1.4fr) 44px; gap: 16px; align-items: end; }
+    .icon-button { display: inline-grid; place-items: center; width: 44px; height: 44px; padding: 10px; flex-shrink: 0; }
+    .icon-button svg { width: 24px; height: 24px; }
+    .remove-destination { background: #3b232a; color: #ff7777; margin-bottom: 6px; }
+    .remove-destination:hover { background: #562b34; }
+    .destination-line > div { min-width: 0; }
+    .destination-line .result { margin-top: 0; }
+    .destination-line .metric { padding: 12px; }
+    .destination-line .metric-value { font-size: 26px; margin-top: 6px; }
+    .destination-line .metric-value.undefined { font-size: 20px; }
+    @media (max-width: 900px) {
+      .destination-line { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 44px; }
+      .destination-line .result { grid-column: 1 / 3; grid-row: 2; }
+      .remove-destination { grid-column: 3; grid-row: 1; }
+    }
+    @media (max-width: 480px) {
+      .destination-line { gap: 10px; }
+      .destination-line input { padding: 12px 8px; }
+      .destination-line label { font-size: 13px; }
+    }
     .metric { min-width: 0; padding: 22px; border: 1px solid #426558; border-radius: 14px; background: #142c25; }
     .metric + .metric { background: #172a40; border-color: #405f83; }
     .metric-label { display: block; color: #c0cddd; font-size: 13px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
@@ -35,46 +61,41 @@
     .metric + .metric .metric-value { color: #9dcaff; }
     .metric-unit { font-size: 16px; font-weight: 500; color: #c0cddd; }
     .metric-value.undefined { font-size: 23px; }
-    #result.error { color: #ffaaa5; }
+    .result.error { color: #ffaaa5; }
     footer { color: #8393a7; font-size: 12px; margin-top: 20px; }
-    @media (max-width: 480px) { form { padding: 20px; } #result.metrics { grid-template-columns: 1fr; } }
+    @media (max-width: 480px) { form { padding: 20px; } .result.metrics { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
   <main>
     <span class="tag">DISTÂNCIA E AZIMUTE</span>
-    <h1>Calculadora de Balística de Morteiro</h1>
-    <p>Informe os pontos de origem e destino para consultar a distância em metros e o azimute em graus.</p>
-    <form id="coordinates">
+    <h1>Calculadora de Balística</h1>
+    <p>Informe a origem e adicione os destinos do jogo para consultar a distância e o azimute de cada ponto.</p>
+    <form id="coordinates" novalidate>
       <div class="field">
         <label for="origin">Ponto de origem</label>
         <input id="origin" name="origin" placeholder="x101.33, y59.98" required autocomplete="off" spellcheck="false" aria-describedby="origin-hint">
         <p class="hint" id="origin-hint">Cole no formato x101.33, y59.98. Fixe a origem para reutilizá-la nas próximas consultas.</p>
         <label class="lock" for="lock-origin"><input type="checkbox" id="lock-origin"> Fixar origem</label>
       </div>
-      <div class="field">
-        <label for="destination">Ponto de destino</label>
-        <input id="destination" name="destination" placeholder="x97.27, y61.27" required autocomplete="off" spellcheck="false" aria-describedby="destination-hint">
-        <p class="hint" id="destination-hint">Cole no formato x97.27, y61.27. Use ponto para separar as casas decimais.</p>
-      </div>
+      <p class="hint" id="destination-hint">Destinos: use o formato x97.27, y61.27, com ponto nos decimais.</p>
+      <div id="destinations"></div>
+      <div id="result" class="result" role="status" aria-live="polite"></div>
       <div class="actions">
-        <button type="submit">Calcular distância e azimute</button>
-        <button type="reset" class="secondary">Limpar campos</button>
+        <button type="button" id="add-destination" class="icon-button" aria-label="Adicionar destino" title="Adicionar destino"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+        <button type="submit" class="icon-button" aria-label="Calcular todos os destinos" title="Calcular todos os destinos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M8 6h8v3H8zM8 13h1M12 13h1M16 13h0M8 17h1M12 17h1M16 17h0"/></svg></button>
       </div>
-      <div id="result" role="status" aria-live="polite"></div>
     </form>
     <footer>Coordenadas cartesianas · Distância em metros · Azimute em graus</footer>
   </main>
   <script>
     const form = document.querySelector('form');
     const origin = document.querySelector('#origin');
-    const destination = document.querySelector('#destination');
+    const destinations = document.querySelector('#destinations');
     const result = document.querySelector('#result');
     const lockOrigin = document.querySelector('#lock-origin');
-    const clear = document.querySelector('button[type="reset"]');
     lockOrigin.addEventListener('change', () => {
       origin.readOnly = lockOrigin.checked;
-      clear.textContent = lockOrigin.checked ? 'Limpar destino' : 'Limpar campos';
       clearResult();
     });
     function parsePoint(value) {
@@ -83,23 +104,111 @@
       const point = { x: Number(match[1]), y: Number(match[2]) };
       return Number.isFinite(point.x) && Number.isFinite(point.y) ? point : null;
     }
-    function clearResult() { result.textContent = ''; result.className = ''; }
+    function clearResult() {
+      form.querySelectorAll('.result').forEach(output => {
+        output.textContent = '';
+        output.className = 'result';
+      });
+    }
+    let destinationId = 0;
+    function addDestination(focus = true) {
+      const id = `destination-${++destinationId}`;
+      const row = document.createElement('div');
+      row.className = 'destination';
+      row.innerHTML = `
+        <div class="destination-line">
+          <div class="destination-name">
+            <label for="${id}-name">Nome do destino</label>
+            <input id="${id}-name" name="${id}-name" class="destination-name-input" placeholder="Destino ${destinationId}" autocomplete="off">
+          </div>
+          <div>
+            <label for="${id}">Coordenadas</label>
+            <input id="${id}" name="${id}" class="destination-coordinates" placeholder="x97.27, y61.27" required autocomplete="off" spellcheck="false" aria-describedby="destination-hint">
+          </div>
+          <div class="result" role="status" aria-live="polite"></div>
+          <button type="button" class="icon-button remove-destination" title="Remover destino"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M9 6V4h6v2M5 6l1 14h12l1-14M10 10v6M14 10v6"/></svg></button>
+        </div>`;
+      row.querySelector('button').setAttribute('aria-label', `Remover destino ${destinationId}`);
+      const nameInput = row.querySelector('.destination-name-input');
+      function confirmName() {
+        const name = nameInput.value.trim();
+        if (!name || !nameInput.isConnected) return;
+        const heading = document.createElement('h2');
+        heading.className = 'destination-title';
+        heading.textContent = name;
+        row.querySelector('.destination-name').replaceChildren(heading);
+        row.querySelector('button').setAttribute('aria-label', `Remover destino ${name}`);
+      }
+      nameInput.addEventListener('blur', confirmName);
+      nameInput.addEventListener('keydown', event => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          confirmName();
+          if (nameInput.value.trim()) row.querySelector('.destination-coordinates').focus();
+        }
+      });
+      const coordinatesInput = row.querySelector('.destination-coordinates');
+      function confirmCoordinates() {
+        if (!coordinatesInput.isConnected || !coordinatesInput.value.trim()) return;
+        if (!parsePoint(coordinatesInput.value)) {
+          const output = row.querySelector('.result');
+          output.className = 'result error';
+          output.textContent = 'Confira este destino. Use o formato x97.27, y61.27, com ponto nos decimais.';
+          return;
+        }
+        const text = document.createElement('p');
+        text.id = id;
+        text.className = 'destination-coordinates destination-coordinates-text';
+        text.textContent = coordinatesInput.value.trim();
+        text.tabIndex = -1;
+        const label = coordinatesInput.previousElementSibling;
+        const caption = document.createElement('span');
+        caption.className = 'metric-label';
+        caption.textContent = label.textContent;
+        label.replaceWith(caption);
+        coordinatesInput.replaceWith(text);
+      }
+      coordinatesInput.addEventListener('blur', confirmCoordinates);
+      coordinatesInput.addEventListener('keydown', event => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          confirmCoordinates();
+          if (!coordinatesInput.isConnected) form.querySelector('button[type="submit"]').focus();
+        }
+      });
+      row.querySelector('button').addEventListener('click', () => {
+        row.remove();
+        if (!destinations.children.length) addDestination();
+      });
+      destinations.append(row);
+      if (focus) row.querySelector('input').focus();
+    }
+    document.querySelector('#add-destination').addEventListener('click', () => addDestination());
+    addDestination(false);
     form.addEventListener('submit', event => {
       event.preventDefault();
       clearResult();
       const a = parsePoint(origin.value);
-      const b = parsePoint(destination.value);
-      if (!a || !b) {
-        result.className = 'error';
-        result.textContent = `Confira ${!a ? 'a origem' : 'o destino'}. Use o formato x101.33, y59.98, com ponto nos decimais.`;
-        (!a ? origin : destination).focus();
+      if (!a) {
+        result.className = 'result error';
+        result.textContent = 'Confira a origem. Use o formato x101.33, y59.98, com ponto nos decimais.';
+        origin.focus();
         return;
       }
+      destinations.querySelectorAll('.destination').forEach(row => {
+        const destination = row.querySelector('.destination-coordinates');
+        const result = row.querySelector('.result');
+        const b = parsePoint(destination.value ?? destination.textContent);
+        if (!b) {
+          result.className = 'result error';
+          result.textContent = 'Confira este destino. Use o formato x97.27, y61.27, com ponto nos decimais.';
+          return;
+        }
       const dx = b.x - a.x;
       const dy = b.y - a.y;
       const distance = Math.hypot(dx, dy) * 100;
       if (!Number.isFinite(distance)) {
-        result.className = 'error';
+        result.className = 'result error';
         result.textContent = 'As coordenadas são grandes demais para calcular a distância. Use valores menores.';
         return;
       }
@@ -112,7 +221,7 @@
         : `${(Math.round(azimuth * 100) / 100 % 360).toLocaleString('pt-BR', {
             minimumFractionDigits: 2, maximumFractionDigits: 2
           })}°`;
-      result.className = 'metrics';
+      result.className = 'result metrics';
       function addMetric(label, value, unit, undefinedValue = false) {
         const card = document.createElement('div');
         card.className = 'metric';
@@ -132,15 +241,16 @@
       addMetric('Distância', formattedDistance, ' metros');
       const samePoint = dx === 0 && dy === 0;
       addMetric('Azimute', samePoint ? 'Indefinido' : formattedAzimuth.slice(0, -1), samePoint ? '' : '°', samePoint);
+      });
     });
-    form.addEventListener('reset', event => {
-      if (lockOrigin.checked) {
-        event.preventDefault();
-        destination.value = '';
+    form.addEventListener('input', event => {
+      if (event.target === origin) clearResult();
+      else if (event.target.matches('.destination-coordinates')) {
+        const output = event.target.closest('.destination').querySelector('.result');
+        output.textContent = '';
+        output.className = 'result';
       }
-      clearResult();
     });
-    form.addEventListener('input', clearResult);
   </script>
 </body>
 </html>
