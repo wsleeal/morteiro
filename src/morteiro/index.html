@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Origem e destino</title>
+  <title>Calculadora de Balística de Morteiro</title>
   <style>
     :root { color-scheme: dark; font-family: system-ui, sans-serif; background: #10151d; color: #edf2f8; }
     * { box-sizing: border-box; }
@@ -41,28 +41,28 @@
 </head>
 <body>
   <main>
-    <span class="tag">COORDENADAS</span>
-    <h1>Origem e destino</h1>
-    <p>Cole as coordenadas para calcular a distância e o azimute entre os pontos.</p>
+    <span class="tag">DISTÂNCIA E AZIMUTE</span>
+    <h1>Calculadora de Balística de Morteiro</h1>
+    <p>Informe os pontos de origem e destino para consultar a distância em metros e o azimute em graus.</p>
     <form id="coordinates">
       <div class="field">
-        <label for="origin">Origem</label>
+        <label for="origin">Ponto de origem</label>
         <input id="origin" name="origin" placeholder="x101.33, y59.98" required autocomplete="off" spellcheck="false" aria-describedby="origin-hint">
-        <p class="hint" id="origin-hint">Exemplo: x101.33, y59.98</p>
+        <p class="hint" id="origin-hint">Cole no formato x101.33, y59.98. Fixe a origem para reutilizá-la nas próximas consultas.</p>
         <label class="lock" for="lock-origin"><input type="checkbox" id="lock-origin"> Fixar origem</label>
       </div>
       <div class="field">
-        <label for="destination">Destino</label>
+        <label for="destination">Ponto de destino</label>
         <input id="destination" name="destination" placeholder="x97.27, y61.27" required autocomplete="off" spellcheck="false" aria-describedby="destination-hint">
-        <p class="hint" id="destination-hint">Exemplo: x97.27, y61.27</p>
+        <p class="hint" id="destination-hint">Cole no formato x97.27, y61.27. Use ponto para separar as casas decimais.</p>
       </div>
       <div class="actions">
-        <button type="submit">Calcular distância</button>
-        <button type="reset" class="secondary">Limpar</button>
+        <button type="submit">Calcular distância e azimute</button>
+        <button type="reset" class="secondary">Limpar campos</button>
       </div>
       <div id="result" role="status" aria-live="polite"></div>
     </form>
-    <footer>Servidor local em Python · http.server</footer>
+    <footer>Coordenadas cartesianas · Distância em metros · Azimute em graus</footer>
   </main>
   <script>
     const form = document.querySelector('form');
@@ -73,7 +73,7 @@
     const clear = document.querySelector('button[type="reset"]');
     lockOrigin.addEventListener('change', () => {
       origin.readOnly = lockOrigin.checked;
-      clear.textContent = lockOrigin.checked ? 'Limpar destino' : 'Limpar';
+      clear.textContent = lockOrigin.checked ? 'Limpar destino' : 'Limpar campos';
       clearResult();
     });
     function parsePoint(value) {

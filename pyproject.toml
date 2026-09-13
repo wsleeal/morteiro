@@ -1,7 +1,7 @@
 [project]
 name = "morteiro"
 version = "0.1.0"
-description = "Add your description here"
+description = "Aplicação web local para calcular distância e azimute entre coordenadas."
 readme = "README.md"
 authors = [
     { name = "William Leal", email = "wsleeal@gmail.com" }

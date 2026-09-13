@@ -2,18 +2,28 @@
 
 Página local com dois campos para coordenadas, usando apenas a biblioteca padrão do Python.
 
-Na pasta do projeto, execute:
+Na pasta do projeto, instale o pacote uma vez (Python 3.14 ou superior):
 
 ```powershell
-uv run python src/morteiro/server.py
+python -m pip install -e .
 ```
 
-Se `python` já estiver disponível no terminal, você pode executar `python src/morteiro/server.py` diretamente.
+Depois, inicie com o mesmo Python usado na instalação, de qualquer pasta:
+
+```powershell
+python -m morteiro
+```
+
+Se você usa `uv`, pode instalar e iniciar diretamente na pasta do projeto com:
+
+```powershell
+uv run python -m morteiro
+```
 
 Abra http://127.0.0.1:8000 no navegador. Para usar outra porta:
 
 ```powershell
-python src/morteiro/server.py --port 8080
+python -m morteiro --port 8080
 ```
 
 Cole a origem (`x101.33, y59.98`) e o destino (`x97.27, y61.27`). A página valida e exibe os pontos e permite limpar os campos. Marque “Fixar origem” para bloquear sua edição; nesse caso, o botão de limpar apaga somente o destino. Aceita números negativos e espaços entre os componentes. Use ponto como separador decimal.
