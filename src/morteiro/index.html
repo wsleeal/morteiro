@@ -34,7 +34,7 @@
   <main>
     <span class="tag">COORDENADAS</span>
     <h1>Origem e destino</h1>
-    <p>Cole as coordenadas de cada ponto nos campos abaixo.</p>
+    <p>Cole as coordenadas para calcular a distância em linha reta entre os pontos.</p>
     <form id="coordinates">
       <div class="field">
         <label for="origin">Origem</label>
@@ -48,7 +48,7 @@
         <p class="hint" id="destination-hint">Exemplo: x97.27, y61.27</p>
       </div>
       <div class="actions">
-        <button type="submit">Confirmar coordenadas</button>
+        <button type="submit">Calcular distância</button>
         <button type="reset" class="secondary">Limpar</button>
       </div>
       <div id="result" role="status" aria-live="polite"></div>
@@ -85,7 +85,16 @@
         (!a ? origin : destination).focus();
         return;
       }
-      result.textContent = `Coordenadas confirmadas.\nOrigem: X ${a.x} · Y ${a.y}\nDestino: X ${b.x} · Y ${b.y}`;
+      const distance = Math.hypot(b.x - a.x, b.y - a.y) * 100;
+      if (!Number.isFinite(distance)) {
+        result.className = 'error';
+        result.textContent = 'As coordenadas são grandes demais para calcular a distância. Use valores menores.';
+        return;
+      }
+      const formattedDistance = distance.toLocaleString('pt-BR', {
+        minimumFractionDigits: 2, maximumFractionDigits: 2
+      });
+      result.textContent = `Distância em linha reta: ${formattedDistance} metros\nOrigem: X ${a.x} · Y ${a.y}\nDestino: X ${b.x} · Y ${b.y}`;
     });
     form.addEventListener('reset', event => {
       if (lockOrigin.checked) {

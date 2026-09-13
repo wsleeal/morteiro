@@ -18,4 +18,6 @@ python src/morteiro/server.py --port 8080
 
 Cole a origem (`x101.33, y59.98`) e o destino (`x97.27, y61.27`). A página valida e exibe os pontos e permite limpar os campos. Marque “Fixar origem” para bloquear sua edição; nesse caso, o botão de limpar apaga somente o destino. Aceita números negativos e espaços entre os componentes. Use ponto como separador decimal.
 
+Clique em “Calcular distância” para obter a distância em metros: `√((destino.x − origem.x)² + (destino.y − origem.y)²) × 100`. O resultado é exibido com duas casas decimais. Para os exemplos acima, o resultado é aproximadamente `426,00 metros`.
+
 Encerre o servidor com Ctrl+C. Se o projeto estiver instalado, também é possível iniciar com `morteiro` ou `python -m morteiro`.
