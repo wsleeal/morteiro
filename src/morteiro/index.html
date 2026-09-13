@@ -34,7 +34,7 @@
   <main>
     <span class="tag">COORDENADAS</span>
     <h1>Origem e destino</h1>
-    <p>Cole as coordenadas para calcular a distância em linha reta entre os pontos.</p>
+    <p>Cole as coordenadas para calcular a distância e o azimute entre os pontos.</p>
     <form id="coordinates">
       <div class="field">
         <label for="origin">Origem</label>
@@ -85,7 +85,9 @@
         (!a ? origin : destination).focus();
         return;
       }
-      const distance = Math.hypot(b.x - a.x, b.y - a.y) * 100;
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const distance = Math.hypot(dx, dy) * 100;
       if (!Number.isFinite(distance)) {
         result.className = 'error';
         result.textContent = 'As coordenadas são grandes demais para calcular a distância. Use valores menores.';
@@ -94,7 +96,13 @@
       const formattedDistance = distance.toLocaleString('pt-BR', {
         minimumFractionDigits: 2, maximumFractionDigits: 2
       });
-      result.textContent = `Distância em linha reta: ${formattedDistance} metros\nOrigem: X ${a.x} · Y ${a.y}\nDestino: X ${b.x} · Y ${b.y}`;
+      const azimuth = (Math.atan2(dx, dy) * 180 / Math.PI + 360) % 360;
+      const formattedAzimuth = dx === 0 && dy === 0
+        ? 'Indefinido (origem e destino iguais)'
+        : `${(Math.round(azimuth * 100) / 100 % 360).toLocaleString('pt-BR', {
+            minimumFractionDigits: 2, maximumFractionDigits: 2
+          })}°`;
+      result.textContent = `Distância em linha reta: ${formattedDistance} metros\nAzimute: ${formattedAzimuth}\nOrigem: X ${a.x} · Y ${a.y}\nDestino: X ${b.x} · Y ${b.y}\nReferência: X para leste, Y para norte; azimute no sentido horário a partir do norte.`;
     });
     form.addEventListener('reset', event => {
       if (lockOrigin.checked) {
