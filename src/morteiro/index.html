@@ -4,7 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Calculadora de Balística</title>
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.3/dist/cdn.min.js"></script>
   <style>
     :root { color-scheme: dark; font-family: system-ui, sans-serif; background: #10151d; color: #edf2f8; }
     * { box-sizing: border-box; }
@@ -40,6 +41,7 @@
     .icon-button { display: inline-grid; place-items: center; width: 44px; height: 44px; padding: 10px; flex-shrink: 0; }
     .icon-button svg { width: 24px; height: 24px; }
     .remove-destination { background: #3b232a; color: #ff7777; align-self: end; margin-bottom: 2px; }
+    .destination-actions { display: flex; flex-direction: column; gap: 8px; justify-self: end; }
     .remove-destination:hover { background: #562b34; }
     .destination-line > div { min-width: 0; }
     .destination-line .result { margin-top: 0; }
@@ -52,7 +54,7 @@
     @media (max-width: 900px) {
       .destination-line { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 44px; }
       .destination-line .result { grid-column: 1 / 3; grid-row: 2; }
-      .remove-destination { grid-column: 3; grid-row: 1; }
+      .destination-actions { grid-column: 3; grid-row: 1; }
     }
     @media (max-width: 480px) {
       .destination-line { gap: 10px; }
@@ -68,11 +70,29 @@
     .metric-value.undefined { font-size: 23px; }
     .result.error { color: #ffaaa5; }
     footer { color: #8393a7; font-size: 12px; margin-top: 20px; }
-    @media (max-width: 480px) { body { padding: 24px 12px; } form { padding: 16px; margin-top: 24px; } .destination { padding: 12px; } .destination-line { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .remove-destination { grid-column: 2; grid-row: 3; justify-self: end; } }
+    @media (max-width: 480px) { body { padding: 24px 12px; } form { padding: 16px; margin-top: 24px; } .destination { padding: 12px; } .destination-line { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .destination-actions { grid-column: 2; grid-row: 3; justify-self: end; } }
+    [x-cloak] { display: none !important; }
+    dialog { width: min(480px, calc(100% - 24px)); max-height: calc(100dvh - 24px); padding: 0; border: 1px solid #48576b; border-radius: 20px; background: #19222e; color: #edf2f8; overflow-y: auto; }
+    dialog::backdrop { background: rgb(0 0 0 / .7); }
+    body:has(dialog[open]) { overflow: hidden; }
+    dialog form { width: 100%; margin: 0; border: 0; }
+    dialog h2 { margin: 0 0 12px; font-size: 24px; }
+    dialog .field { margin-top: 20px; }
+    .empty-state { padding-top: 20px; }
+    @media (max-width: 480px) {
+      #origin { width: 100%; }
+      .destination-line { grid-template-columns: minmax(0, 1fr); }
+      .destination-line .result { grid-column: 1; grid-row: auto; }
+      .destination-actions { grid-column: 1; grid-row: auto; justify-self: end; }
+      .actions > button:not(.icon-button) { flex: 1 1 140px; }
+    }
+    @media (max-width: 360px) {
+      .destination-line .result.metrics { grid-template-columns: minmax(0, 1fr); }
+    }
   </style>
 </head>
 <body>
-  <main>
+  <main x-data="destinationModal" @edit-destination="open($event.detail.row)">
     <span class="tag">DISTÂNCIA E AZIMUTE</span>
     <h1>Calculadora de Balística</h1>
     <p>Informe a origem e adicione os destinos do jogo para consultar a distância e o azimute de cada ponto.</p>
@@ -85,12 +105,33 @@
       </div>
       <p class="hint" id="destination-hint">Destinos: use o formato x97.27, y61.27, com ponto nos decimais.</p>
       <div id="destinations"></div>
+      <p id="empty-destinations" class="empty-state">Nenhum destino adicionado. Clique em “Adicionar destino” para começar.</p>
       <div id="result" class="result" role="status" aria-live="polite"></div>
       <div class="actions">
-        <button type="button" id="add-destination" class="icon-button" aria-label="Adicionar destino" title="Adicionar destino"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
-        <button type="submit" class="icon-button" aria-label="Calcular todos os destinos" title="Calcular todos os destinos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M8 6h8v3H8zM8 13h1M12 13h1M16 13h0M8 17h1M12 17h1M16 17h0"/></svg></button>
+        <button type="button" id="add-destination" @click="open()" aria-haspopup="dialog">Adicionar destino</button>
+        <button type="submit">Calcular</button>
       </div>
     </form>
+    <dialog x-ref="dialog" aria-labelledby="modal-title" aria-describedby="modal-description" @click="if ($event.target === $el) close()" @cancel.prevent="close()">
+      <form @submit.prevent="save()" novalidate>
+        <h2 id="modal-title" x-text="editing ? 'Editar destino' : 'Adicionar destino'">Adicionar destino</h2>
+        <p id="modal-description">Informe um nome e as coordenadas do destino.</p>
+        <div class="field">
+          <label for="new-destination-name">Nome do destino (opcional)</label>
+          <input id="new-destination-name" x-ref="name" x-model="name" placeholder="Ex.: Base norte" autocomplete="off" autofocus>
+        </div>
+        <div class="field">
+          <label for="new-destination-point">Coordenadas</label>
+          <input id="new-destination-point" x-ref="point" x-model="point" @input="error = ''" :aria-invalid="error ? 'true' : 'false'" placeholder="x97.27, y61.27" required autocomplete="off" spellcheck="false" aria-describedby="modal-point-hint modal-error">
+          <p id="modal-point-hint" class="hint">Use ponto nos decimais: x97.27, y61.27.</p>
+        </div>
+        <p id="modal-error" class="result error" role="alert" x-text="error" x-show="error" x-cloak></p>
+        <div class="actions">
+          <button type="button" class="secondary" @click="close()">Cancelar</button>
+          <button type="submit" x-text="editing ? 'Salvar alterações' : 'Adicionar'">Adicionar</button>
+        </div>
+      </form>
+    </dialog>
     <footer>Coordenadas cartesianas · Distância em metros · Azimute em graus</footer>
   </main>
   <script>
@@ -115,87 +156,93 @@
         output.className = 'result';
       });
     }
+    document.addEventListener('alpine:init', () => {
+      Alpine.data('destinationModal', () => ({
+        name: '', point: '', error: '', editing: null,
+        open(row = null) {
+          this.editing = row;
+          this.name = row ? row.querySelector('.destination-title').textContent : '';
+          this.point = row ? row.querySelector('.destination-coordinates').textContent : '';
+          this.error = '';
+          this.$refs.dialog.showModal();
+          this.$nextTick(() => this.$refs.name.focus());
+        },
+        close() {
+          this.$refs.dialog.close();
+          const trigger = this.editing?.querySelector('.edit-destination');
+          this.editing = null;
+          (trigger || document.querySelector('#add-destination')).focus();
+        },
+        save() {
+          if (!parsePoint(this.point)) {
+            this.error = 'Confira as coordenadas. Use o formato x97.27, y61.27.';
+            this.$refs.point.focus();
+            return;
+          }
+          if (this.editing) {
+            updateDestination(this.editing, this.name.trim(), this.point.trim());
+          } else {
+            addDestination(this.name.trim(), this.point.trim());
+          }
+          this.close();
+        }
+      }));
+    });
     let destinationId = 0;
-    function addDestination(focus = true) {
-      const id = `destination-${++destinationId}`;
+    function updateDestination(row, name, point) {
+      const title = name || row.dataset.defaultName;
+      row.querySelector('.destination-title').textContent = title;
+      row.querySelector('.destination-coordinates').textContent = point;
+      row.querySelector('.edit-destination').setAttribute('aria-label', `Editar destino ${title}`);
+      row.querySelector('.remove-destination').setAttribute('aria-label', `Remover destino ${title}`);
+      const output = row.querySelector('.result');
+      output.textContent = '';
+      output.className = 'result';
+    }
+    function addDestination(name, point) {
       const row = document.createElement('div');
       row.className = 'destination';
+      row.dataset.defaultName = `Destino ${++destinationId}`;
       row.innerHTML = `
         <div class="destination-line">
           <div class="destination-name">
-            <label for="${id}-name">Nome do destino</label>
-            <input id="${id}-name" name="${id}-name" class="destination-name-input" placeholder="Destino ${destinationId}" autocomplete="off">
+            <span class="destination-caption">Nome do destino</span>
+            <h2 class="destination-title"></h2>
           </div>
           <div>
-            <label for="${id}">Coordenadas</label>
-            <input id="${id}" name="${id}" class="destination-coordinates" placeholder="x97.27, y61.27" required autocomplete="off" spellcheck="false" aria-describedby="destination-hint">
+            <span class="destination-caption">Coordenadas</span>
+            <p class="destination-coordinates destination-coordinates-text"></p>
           </div>
           <div class="result" role="status" aria-live="polite"></div>
-          <button type="button" class="icon-button remove-destination" title="Remover destino"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M9 6V4h6v2M5 6l1 14h12l1-14M10 10v6M14 10v6"/></svg></button>
+          <div class="destination-actions">
+            <button type="button" class="icon-button secondary edit-destination" title="Editar destino" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 3 5 5M4 15 16 3a3.54 3.54 0 0 1 5 5L9 20l-6 1zM4 15l5 5"/></svg></button>
+            <button type="button" class="icon-button remove-destination" title="Remover destino"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M9 6V4h6v2M5 6l1 14h12l1-14M10 10v6M14 10v6"/></svg></button>
+          </div>
         </div>`;
-      row.querySelector('button').setAttribute('aria-label', `Remover destino ${destinationId}`);
-      const nameInput = row.querySelector('.destination-name-input');
-      function confirmName() {
-        const name = nameInput.value.trim();
-        if (!name || !nameInput.isConnected) return;
-        const heading = document.createElement('h2');
-        heading.className = 'destination-title';
-        heading.textContent = name;
-        const caption = document.createElement('span');
-        caption.className = 'destination-caption';
-        caption.textContent = 'Nome do destino';
-        row.querySelector('.destination-name').replaceChildren(caption, heading);
-        row.querySelector('button').setAttribute('aria-label', `Remover destino ${name}`);
-      }
-      nameInput.addEventListener('blur', confirmName);
-      nameInput.addEventListener('keydown', event => {
-        if (event.key === 'Enter') {
-          event.preventDefault();
-          confirmName();
-          if (nameInput.value.trim()) row.querySelector('.destination-coordinates').focus();
-        }
+      updateDestination(row, name, point);
+      row.querySelector('.edit-destination').addEventListener('click', () => {
+        row.dispatchEvent(new CustomEvent('edit-destination', { bubbles: true, detail: { row } }));
       });
-      const coordinatesInput = row.querySelector('.destination-coordinates');
-      function confirmCoordinates() {
-        if (!coordinatesInput.isConnected || !coordinatesInput.value.trim()) return;
-        if (!parsePoint(coordinatesInput.value)) {
-          const output = row.querySelector('.result');
-          output.className = 'result error';
-          output.textContent = 'Confira este destino. Use o formato x97.27, y61.27, com ponto nos decimais.';
-          return;
-        }
-        const text = document.createElement('p');
-        text.id = id;
-        text.className = 'destination-coordinates destination-coordinates-text';
-        text.textContent = coordinatesInput.value.trim();
-        text.tabIndex = -1;
-        const label = coordinatesInput.previousElementSibling;
-        const caption = document.createElement('span');
-        caption.className = 'destination-caption';
-        caption.textContent = label.textContent;
-        label.replaceWith(caption);
-        coordinatesInput.replaceWith(text);
-      }
-      coordinatesInput.addEventListener('blur', confirmCoordinates);
-      coordinatesInput.addEventListener('keydown', event => {
-        if (event.key === 'Enter') {
-          event.preventDefault();
-          confirmCoordinates();
-          if (!coordinatesInput.isConnected) form.querySelector('button[type="submit"]').focus();
-        }
-      });
-      row.querySelector('button').addEventListener('click', () => {
+      row.querySelector('.remove-destination').addEventListener('click', () => {
+        const next = row.nextElementSibling || row.previousElementSibling;
         row.remove();
-        if (!destinations.children.length) addDestination();
+        document.querySelector('#empty-destinations').hidden = destinations.children.length > 0;
+        (next?.querySelector('button') || document.querySelector('#add-destination')).focus();
       });
       destinations.append(row);
-      if (focus) row.querySelector('input').focus();
+      document.querySelector('#empty-destinations').hidden = true;
+      result.textContent = '';
+      result.className = 'result';
     }
-    document.querySelector('#add-destination').addEventListener('click', () => addDestination());
-    addDestination(false);
     form.addEventListener('submit', event => {
       event.preventDefault();
       clearResult();
+      if (!destinations.children.length) {
+        result.className = 'result error';
+        result.textContent = 'Adicione um destino antes de calcular.';
+        document.querySelector('#add-destination').focus();
+        return;
+      }
       const a = parsePoint(origin.value);
       if (!a) {
         result.className = 'result error';
