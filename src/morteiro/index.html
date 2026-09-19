@@ -142,7 +142,6 @@
     const lockOrigin = document.querySelector('#lock-origin');
     lockOrigin.addEventListener('change', () => {
       origin.readOnly = lockOrigin.checked;
-      clearResult();
     });
     function parsePoint(value) {
       const match = value.trim().match(/^x\s*([+-]?(?:\d+(?:\.\d+)?|\.\d+))\s*,\s*y\s*([+-]?(?:\d+(?:\.\d+)?|\.\d+))$/i);
@@ -195,9 +194,7 @@
       row.querySelector('.destination-coordinates').textContent = point;
       row.querySelector('.edit-destination').setAttribute('aria-label', `Editar destino ${title}`);
       row.querySelector('.remove-destination').setAttribute('aria-label', `Remover destino ${title}`);
-      const output = row.querySelector('.result');
-      output.textContent = '';
-      output.className = 'result';
+      if (row.parentElement === destinations) calculate();
     }
     function addDestination(name, point) {
       const row = document.createElement('div');
@@ -227,17 +224,21 @@
         const next = row.nextElementSibling || row.previousElementSibling;
         row.remove();
         document.querySelector('#empty-destinations').hidden = destinations.children.length > 0;
+        calculate();
         (next?.querySelector('button') || document.querySelector('#add-destination')).focus();
       });
       destinations.append(row);
       document.querySelector('#empty-destinations').hidden = true;
-      result.textContent = '';
-      result.className = 'result';
+      calculate();
     }
     form.addEventListener('submit', event => {
       event.preventDefault();
+      calculate(true);
+    });
+    function calculate(manual = false) {
       clearResult();
       if (!destinations.children.length) {
+        if (!manual) return;
         result.className = 'result error';
         result.textContent = 'Adicione um destino antes de calcular.';
         document.querySelector('#add-destination').focus();
@@ -245,6 +246,7 @@
       }
       const a = parsePoint(origin.value);
       if (!a) {
+        if (!manual) return;
         result.className = 'result error';
         result.textContent = 'Confira a origem. Use o formato x101.33, y59.98, com ponto nos decimais.';
         origin.focus();
@@ -297,14 +299,9 @@
       const samePoint = dx === 0 && dy === 0;
       addMetric('Azimute', samePoint ? 'Indefinido' : formattedAzimuth.slice(0, -1), samePoint ? '' : '°', samePoint);
       });
-    });
+    }
     form.addEventListener('input', event => {
-      if (event.target === origin) clearResult();
-      else if (event.target.matches('.destination-coordinates')) {
-        const output = event.target.closest('.destination').querySelector('.result');
-        output.textContent = '';
-        output.className = 'result';
-      }
+      if (event.target === origin) calculate();
     });
   </script>
 </body>
